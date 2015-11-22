@@ -1,0 +1,6 @@
+.tox/
+.ropeproject/
+*.pyc
+pip-selfcheck.json
+django_textclassifier.egg-info/
+.cache/

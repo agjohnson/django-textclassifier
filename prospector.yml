@@ -1,0 +1,21 @@
+strictness: medium
+
+test-warnings: false
+doc-warnings: true
+
+ignore-paths:
+  - docs
+
+pylint:
+  options:
+    docstring-min-length: 20
+
+pep8:
+  full: true
+
+pep257:
+  disable:
+    - D203
+
+mccabe:
+  run: false
