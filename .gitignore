@@ -5,3 +5,4 @@ pip-selfcheck.json
 django_textclassifier.egg-info/
 .cache/
 dist/
+build/
