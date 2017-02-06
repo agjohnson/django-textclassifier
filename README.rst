@@ -4,7 +4,7 @@ django-textclassifier
 Validators and some utility functions for validating fields using a naive
 bayesian text classifier, provided by `TextBlob`_
 
-.. _TextBlob: http://textblob.readthedocs.org/
+.. _TextBlob: http://textblob.readthedocs.io/
 
 Usage
 -----

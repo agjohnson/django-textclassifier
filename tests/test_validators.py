@@ -1,6 +1,8 @@
 """Test validators"""
 
+import os
 import sys
+import json
 
 try:
     from StringIO import StringIO
@@ -15,48 +17,54 @@ from django.test import TestCase, override_settings
 from textblob.classifiers import NaiveBayesClassifier
 
 from textclassifier.validators import ClassifierValidator
-from textclassifier.classifier import DefaultClassifier
+from textclassifier.classifier import FileStorage
 
 
 class TestValidators(TestCase):
 
     def setUp(self):
-        self.data = StringIO('{}')
-        self.classifier = NaiveBayesClassifier(self.data, format='json')
-        self.classifier.update([
+        self.data = json.dumps([
             ('spam spam spam', 'spam'),
-            ('this is not spam', 'valid'),
+            ('this is not spam', 'valid')
         ])
-
-        self.mock_classifier_get = mock.patch.object(
-            ClassifierValidator,
-            'get_classifier',
-            mock.Mock(return_value=self.classifier)
-        )
-        self.patch_classifier_get = self.mock_classifier_get.start()
+        self.mocks = {
+            'open': mock.patch(
+                'textclassifier.classifier.open',
+                mock.mock_open(read_data=self.data),
+                create=True,
+            ),
+        }
+        self.patches = dict((k, m.start()) for (k, m) in self.mocks.items())
 
     def test_validator_pass(self):
-        validate = ClassifierValidator()
-        validate('this is totally legit')
+        validate = ClassifierValidator(storage=FileStorage('/dev/null'))
+        self.assertTrue(validate('this is totally legit'))
 
     def test_validator_invalid(self):
-        validate = ClassifierValidator()
+        validate = ClassifierValidator(storage=FileStorage('/dev/null'))
         with self.assertRaises(ValidationError):
             validate('spam spammy spam')
 
     def test_validator_invalid_different_exception(self):
-        validate = ClassifierValidator(raises=ValueError)
+        validate = ClassifierValidator(storage=FileStorage('/dev/null'),
+                                       raises=ValueError)
         with self.assertRaises(ValueError):
             validate('spam spammy spam')
 
-    @mock.patch('textclassifier.classifier.TEXTCLASSIFIER_DATA_FILE', '')
-    def test_open_file_failure(self):
+    def test_invalid_json_throws_value_error(self):
+        self.patches['open'].return_value.read.return_value = 'INVALID JSON'
+        validate = ClassifierValidator(storage=FileStorage('/dev/null'))
+        with self.assertRaises(ValueError):
+            validate('spam spammy spam')
+
+    def test_empty_json(self):
+        self.patches['open'].return_value.read.return_value = '[]'
+        validate = ClassifierValidator(storage=FileStorage('/dev/null'))
+        self.assertTrue(validate('spam spammy spam'))
+
+    def test_open_file_failure_reraises_exception(self):
         """Open file, but still validate after errors"""
-        self.mock_classifier_get.stop()
-        mod_name = ('builtins', '__builtin__')[(sys.version_info < (3,0))]
-        with mock.patch('{0}.open'.format(mod_name)) as mocked_open:
-            mocked_open.side_effect = IOError
-            with self.assertRaises(IOError):
-                DefaultClassifier()
-            validate = ClassifierValidator()
-            validate('spam spam spam')
+        self.patches['open'].side_effect = IOError
+        validate = ClassifierValidator(storage=FileStorage('/dev/null'))
+        with self.assertRaises(IOError):
+            validate('this is totally legit')

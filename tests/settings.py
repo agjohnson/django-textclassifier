@@ -1,3 +1,5 @@
+#import django
+
 DATABASES={
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -5,3 +7,10 @@ DATABASES={
     }
 }
 SECRET_KEY = 'null'
+
+INSTALLED_APPS = [
+    'textclassifier',
+    'tests',
+]
+
+#django.setup()

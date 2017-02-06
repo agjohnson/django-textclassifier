@@ -1,4 +1,8 @@
-"""Classifier for validation"""
+"""Classifier for validation
+
+These classifier classes extend :py:cls:`NaiveBayesClassifier`, providing
+alternative storage mechanisms for the training data.
+"""
 
 import json
 
@@ -6,29 +10,73 @@ from django.conf import settings
 
 from textblob.classifiers import NaiveBayesClassifier
 
-TEXTCLASSIFIER_DATA_FILE = getattr(settings, 'TEXTCLASSIFIER_DATA_FILE', None)
+from textclassifier.models import TrainingData
 
 
-class DefaultClassifier(NaiveBayesClassifier):
-    """Classifier that opens default file based on settings
+class ClassifierStorage(object):
 
-    This extends :py:cls:`NaiveBayesClassifier` and opens a file found at the
-    setting :py:data:`TEXTCLASSIFIER_DATA_FILE`.
-    """
+    classifier_class = NaiveBayesClassifier
 
-    def __init__(self, *args, **kwargs):
-        if TEXTCLASSIFIER_DATA_FILE is None:
-            raise ValueError('Classifier data file is not set')
-        self.data_handle = open(TEXTCLASSIFIER_DATA_FILE, 'r')
-        kwargs['format'] = 'json'
-        NaiveBayesClassifier.__init__(self, self.data_handle, *args, **kwargs)
-
-
-class DefaultWriteableClassifier(DefaultClassifier):
-    """Writeable version of :py:cls:`DefaultClassifier`"""
+    def load(self):
+        pass
 
     def save(self):
-        with open(TEXTCLASSIFIER_DATA_FILE, 'w+') as h:
+        pass
+
+
+class FileStorage(ClassifierStorage):
+    """Classifier that uses file storage for a single source"""
+
+    def __init__(self, filename=None):
+        if filename is None:
+            filename = getattr(settings, 'TEXTCLASSIFIER_DATA_FILE')
+        self.filename = filename
+
+    def load(self):
+        try:
+            handle = open(self.filename, 'r')
+            data = json.load(handle)
+        except IOError:
+            raise IOError('The classification file cannot be opened for reading')
+        except ValueError:
+            raise ValueError('The classification file is not valid JSON')
+        self.classifier = self.classifier_class(data)
+        return self.classifier
+
+    def save(self):
+        try:
+            handle = open(self.filename, 'w+')
             data = [{'text': text, 'label': label}
-                    for (text, label) in self.train_set]
-            json.dump(data, h)
+                    for (text, label) in self.classifier.train_set]
+            json.dump(data, handle)
+        except IOError:
+            raise IOError('The classification file cannot be opened for writing')
+
+
+class DatabaseStorage(ClassifierStorage):
+    """Classifier that uses database modeling to store classification per-field"""
+
+    def __init__(self, field_name):
+        self.field_name = field_name
+
+    def load(self):
+        try:
+            data_obj = TrainingData.objects.get(field=self.field_name)
+            data = json.loads(data_obj.data)
+        except (TrainingData.DoesNotExist, TypeError):
+            data = {}
+        except ValueError:
+            raise ValueError('The classification data for "%s" is not valid JSON',
+                             self.field_name)
+        self.classifier = self.classifier_class(data)
+        return self.classifier
+
+    def save(self):
+        data = json.dumps([{'text': text, 'label': label}
+                           for (text, label) in self.classifier.train_set])
+        try:
+            (TrainingData.objects
+             .filter(field=self.field_name)
+             .update(data=data))
+        except TrainingData.DoesNotExist:
+            TrainingData.objects.create(field=self.field_name, data=data)

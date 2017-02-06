@@ -7,7 +7,6 @@ from django.utils.deconstruct import deconstructible
 from django.utils.translation import ugettext_lazy as _
 
 from .constants import VALID, SPAM
-from .classifier import DefaultClassifier
 
 log = logging.getLogger(__name__)
 
@@ -30,25 +29,32 @@ class ClassifierValidator(object):
     :param type: class
     :param message: Message to raise on exception
     :param code: Validation error code to raise with :py:cls:`ValidationError`
+    :param classifier_class: Classifier class
     """
 
     exception_class = ValidationError
     message = _('Invalid content')
     code = 'invalid'
 
-    def __init__(self, raises=None, message=None, code=None):
+    def __init__(self, raises=None, message=None, code=None,
+                 storage=None):
         if raises is not None:
             self.exception_class = raises
         if message is not None:
             self.message = message
         if code is not None:
             self.code = code
+        self.storage = storage
 
     def __call__(self, value):
-        self.classifier = self.get_classifier()
-        if self.classifier is None:
-            return
-        pdist = self.classifier.prob_classify(value)
+        classifier = self.storage.load()
+        try:
+            pdist = classifier.prob_classify(value)
+        except ValueError as e:
+            # If the training data is incomplete, calls to prob_classify will
+            # throw an exception on not having enough bins
+            print e
+            return True
         if pdist.prob(SPAM) > 0.90:
             log.debug('Classification failed (valid=%.2f spam=%.2f)',
                       pdist.prob(VALID), pdist.prob(SPAM))
@@ -56,25 +62,19 @@ class ClassifierValidator(object):
                 raise self.exception_class(self.message, self.code)
             else:
                 raise self.exception_class(self.message)
+        return True
 
     def __eq__(self, other):
         """Compare for serialization"""
         return (
             isinstance(other, ClassifierValidator) and
-            other.classifier == self.classifier and
+            other.storage == self.storage and
             other.raises == self.raises
         )
 
     def __ne__(self, other):
         """Inverse compare for serialization"""
         return not (self == other)
-
-    def get_classifier(self):
-        try:
-            return DefaultClassifier()
-        except (IOError, OSError, ValueError):
-            log.warn('Error initializing classifier data, check data file',
-                     exc_info=True)
 
 
 validate_classification = ClassifierValidator()
