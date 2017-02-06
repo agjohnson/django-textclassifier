@@ -53,7 +53,6 @@ class ClassifierValidator(object):
         except ValueError as e:
             # If the training data is incomplete, calls to prob_classify will
             # throw an exception on not having enough bins
-            print e
             return True
         if pdist.prob(SPAM) > 0.90:
             log.debug('Classification failed (valid=%.2f spam=%.2f)',
