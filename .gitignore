@@ -6,3 +6,5 @@ django_textclassifier.egg-info/
 .cache/
 dist/
 build/
+docs/_build/
+.python-version
