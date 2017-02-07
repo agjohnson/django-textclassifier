@@ -50,7 +50,7 @@ class ClassifierValidator(object):
         classifier = self.storage.load()
         try:
             pdist = classifier.prob_classify(value)
-        except ValueError as e:
+        except ValueError:
             # If the training data is incomplete, calls to prob_classify will
             # throw an exception on not having enough bins
             return True

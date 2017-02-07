@@ -9,7 +9,6 @@ matrix:
   include:
     - python: 2.7
       script: tox -e docs
-  include:
     - python: 2.7
       script: tox -e lint
 install:
