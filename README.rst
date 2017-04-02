@@ -4,6 +4,8 @@ django-textclassifier
 Validators and some utility functions for validating fields using a naive
 bayesian text classifier and feature extraction, provided by `scikit-learn`_.
 
+.. image:: https://travis-ci.org/agjohnson/django-textclassifier.svg?branch=master
+
 .. _scikit-learn: http://scikit-learn.org/
 
 Usage
