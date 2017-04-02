@@ -80,3 +80,10 @@ class TestClassifier(TestCase):
         classifier = NaiveBayesClassifier(field_name='invalid_data')
         assert classifier.training_data == []
         assert classifier.classify('Anything').is_valid()
+
+    def test_classifier_saves(self):
+        classifier = NaiveBayesClassifier(field_name='previously_empty')
+        classifier.update('Lorem ipsum dolor sit amet', VALID)
+        assert classifier.training_data == [('Lorem ipsum dolor sit amet', VALID)]
+        field = TrainingData.objects.get(field='previously_empty')
+        assert field.data == '"[[\\"Lorem ipsum dolor sit amet\\", \\"valid\\"]]"'

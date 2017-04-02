@@ -38,9 +38,14 @@ class NaiveBayesClassifier(object):
 
     def save(self):
         data = json.dumps(self.training_data)
-        stored_data, _ = TrainingData.get_or_create(field=self.field_name)
-        stored_data.data = data
+        stored_data, _ = TrainingData.objects.get_or_create(field=self.field_name)
+        stored_data.data = json.dumps(data)
         stored_data.save()
+
+    def update(self, value, classification=SPAM):
+        self.load()
+        self.training_data.append((value, classification))
+        self.save()
 
     def classify(self, value, accuracy_threshold=0.95):
         self.load()
