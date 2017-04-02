@@ -7,13 +7,10 @@ classification.
 import json
 import logging
 
-from django.conf import settings
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.naive_bayes import MultinomialNB
 
-from .constants import VALID, SPAM
+from .constants import SPAM
 from .models import TrainingData
 
 log = logging.getLogger(__name__)

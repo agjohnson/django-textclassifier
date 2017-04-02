@@ -2,7 +2,6 @@
 
 from django.db.models.fields import TextField
 
-from .classifier import NaiveBayesClassifier
 from .validators import ClassifierValidator
 
 
