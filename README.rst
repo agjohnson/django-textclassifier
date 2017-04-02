@@ -2,9 +2,9 @@ django-textclassifier
 =====================
 
 Validators and some utility functions for validating fields using a naive
-bayesian text classifier, provided by `TextBlob`_
+bayesian text classifier and feature extraction, provided by `scikit-learn`_.
 
-.. _TextBlob: http://textblob.readthedocs.io/
+.. _sklearn: http://scikit-learn.org/
 
 Usage
 -----
@@ -17,25 +17,25 @@ Add this application to your Django project::
         ...
     ]
 
-You'll also need to set the data file source in your settings::
+Model fields can be protected by text classification validation by either
+adding the validator to an existing field:
 
-    TEXTCLASSIFIER_DATA_FILE = '/tmp/test.json'
+.. code:: python
 
-.. note::
-    The current implementation is very basic, only allowing for one data file.
-    This will eventually be more configurable, but is just a POC for now.
+    from django.db import models
+    from textclassifier.validators import TextClassificationValidator
 
-Data file
----------
+    class MyModel(models.Model):
+        description = models.TextField(validators=[
+            TextClassificationValidator(field_name='app.mymodel.description')
+        ])
 
-The data file needs to be written by hand for now as well. It is read using the
-`TextBlob JSON formatter`_
+Or you can use the included ``TextField`` wrapper:
 
-.. _`TextBlob JSON formatter`: http://textblob.readthedocs.org/en/dev/api_reference.html#textblob.formats.JSON
+.. code:: python
 
-The file should use the labels ``spam`` and ``valid``::
+    from django.db import models
+    from textclassifier.fields import TextClassificationField
 
-    [
-        {"text": "This is spam", "label": "spam"},
-        {"text": "This is valid", "label": "valid"}
-    ]
+    class MyModel(models.Model):
+        description = TextClassificationField()

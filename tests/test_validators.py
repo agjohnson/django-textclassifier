@@ -10,7 +10,7 @@ from django.test import TestCase, override_settings
 
 from textclassifier.constants import SPAM, VALID
 from textclassifier.models import TrainingData
-from textclassifier.validators import ClassifierValidator
+from textclassifier.validators import TextClassificationValidator
 from textclassifier.classifier import NaiveBayesClassifier
 
 
@@ -27,16 +27,16 @@ class TestValidators(TestCase):
         )
 
     def test_validator_pass(self):
-        validate = ClassifierValidator(field_name='foobar')
+        validate = TextClassificationValidator(field_name='foobar')
         self.assertTrue(validate('ham ham ham'))
 
     def test_validator_invalid(self):
-        validate = ClassifierValidator(field_name='foobar')
+        validate = TextClassificationValidator(field_name='foobar')
         with self.assertRaises(ValidationError):
             validate('spam spam spam')
 
     def test_validator_invalid_different_exception(self):
-        validate = ClassifierValidator(field_name='foobar',
+        validate = TextClassificationValidator(field_name='foobar',
                                        raises=ValueError)
         with self.assertRaises(ValueError):
             validate('spam spam spam')
@@ -46,7 +46,7 @@ class TestValidators(TestCase):
             field='invalid',
             data='null',
         )
-        validate = ClassifierValidator(field_name='invalid')
+        validate = TextClassificationValidator(field_name='invalid')
         self.assertTrue(validate('spam spam spam'))
 
     def test_empty_json(self):
@@ -54,5 +54,5 @@ class TestValidators(TestCase):
             field='empty',
             data=None,
         )
-        validate = ClassifierValidator(field_name='empty')
+        validate = TextClassificationValidator(field_name='empty')
         self.assertTrue(validate('spam spam spam'))

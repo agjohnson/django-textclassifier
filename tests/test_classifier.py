@@ -17,7 +17,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings
 
-from textclassifier.validators import ClassifierValidator
+from textclassifier.validators import TextClassificationValidator
 from textclassifier.classifier import NaiveBayesClassifier
 from textclassifier.models import TrainingData
 from textclassifier.constants import VALID, SPAM

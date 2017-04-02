@@ -2,10 +2,10 @@
 
 from django.db.models.fields import TextField
 
-from .validators import ClassifierValidator
+from .validators import TextClassificationValidator
 
 
-class ClassifierTextField(TextField):
+class TextClassificationField(TextField):
     """Implementation of TextField that uses classification for validation
 
     This is mostly a helper function that eliminates the need to specify the
@@ -19,5 +19,5 @@ class ClassifierTextField(TextField):
         field_name = '.'.join([self.model._meta.app_label,
                                self.model._meta.model_name,
                                self.name])
-        validator_list.append(ClassifierValidator(field_name=field_name))
+        validator_list.append(TextClassificationValidator(field_name=field_name))
         return validator_list

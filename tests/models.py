@@ -2,10 +2,10 @@
 
 from django.db import models
 
-from textclassifier.fields import ClassifierTextField
+from textclassifier.fields import TextClassificationField
 
 
 class Foobar(models.Model):
 
-    foo = ClassifierTextField()
-    bar = ClassifierTextField()
+    foo = TextClassificationField()
+    bar = TextClassificationField()

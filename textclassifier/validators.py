@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 @deconstructible
-class ClassifierValidator(object):
+class TextClassificationValidator(object):
     """Text classifier validator
 
     Field validator that uses a text classifier for validation. Training data is
@@ -55,7 +55,7 @@ class ClassifierValidator(object):
     def __eq__(self, other):
         """Compare for serialization"""
         return (
-            isinstance(other, ClassifierValidator) and
+            isinstance(other, TextClassificationValidator) and
             other.classifier == self.classifier and
             other.raises == self.raises
         )
@@ -63,6 +63,3 @@ class ClassifierValidator(object):
     def __ne__(self, other):
         """Inverse compare for serialization"""
         return not (self == other)
-
-
-validate_classification = ClassifierValidator()
