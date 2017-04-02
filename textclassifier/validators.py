@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import ugettext_lazy as _
 
-from .constants import VALID, SPAM
+from .classifier import NaiveBayesClassifier
 
 log = logging.getLogger(__name__)
 
@@ -15,10 +15,8 @@ log = logging.getLogger(__name__)
 class ClassifierValidator(object):
     """Text classifier validator
 
-    Validator that uses classifier to for validation. By default, this uses a
-    naive bayesian classification and looks for the file configured with the
-    setting :py:data:`TEXTCLASSIFIER_DATA_FILE`. If there is a problem with this
-    file, a warning is throw and validation will succeed.
+    Field validator that uses a text classifier for validation. Training data is
+    stored in a database table on a per-field basis.
 
     To avoid raising a validation error to users, you can specify a different
     exception with ``raises``. Form validation or saving can then be wrapped to
@@ -26,37 +24,28 @@ class ClassifierValidator(object):
     for shadowbanning users.
 
     :param raises: Exception class to raise on invalid data
-    :param type: class
     :param message: Message to raise on exception
     :param code: Validation error code to raise with :py:cls:`ValidationError`
-    :param classifier_class: Classifier class
+    :param field_name: Field name to use in database field lookup
     """
 
     exception_class = ValidationError
     message = _('Invalid content')
     code = 'invalid'
 
-    def __init__(self, raises=None, message=None, code=None,
-                 storage=None):
+    def __init__(self, raises=None, message=None, code=None, field_name=None):
         if raises is not None:
             self.exception_class = raises
         if message is not None:
             self.message = message
         if code is not None:
             self.code = code
-        self.storage = storage
+        self.classifier = NaiveBayesClassifier(field_name=field_name)
 
     def __call__(self, value):
-        classifier = self.storage.load()
-        try:
-            pdist = classifier.prob_classify(value)
-        except ValueError:
-            # If the training data is incomplete, calls to prob_classify will
-            # throw an exception on not having enough bins
-            return True
-        if pdist.prob(SPAM) > 0.90:
-            log.debug('Classification failed (valid=%.2f spam=%.2f)',
-                      pdist.prob(VALID), pdist.prob(SPAM))
+        self.classifier.load()
+        result = self.classifier.classify(value)
+        if result.is_spam():
             if issubclass(self.exception_class, ValidationError):
                 raise self.exception_class(self.message, self.code)
             else:
@@ -67,7 +56,7 @@ class ClassifierValidator(object):
         """Compare for serialization"""
         return (
             isinstance(other, ClassifierValidator) and
-            other.storage == self.storage and
+            other.classifier == self.classifier and
             other.raises == self.raises
         )
 

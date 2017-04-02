@@ -2,9 +2,11 @@
 
 import json
 
+import pytest
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
+from textclassifier.constants import SPAM, VALID
 from textclassifier.models import TrainingData
 
 from .models import Foobar
@@ -17,7 +19,7 @@ class TestFields(TestCase):
         try:
             m.clean_fields()
         except Exception:
-            self.fail()
+            pytest.fail('Fields should have been clean')
 
     def test_validator_pass_empty_data(self):
         TrainingData.objects.create(
@@ -28,28 +30,34 @@ class TestFields(TestCase):
         try:
             m.clean_fields()
         except Exception:
-            self.fail()
+            pytest.fail('Fields should have been clean')
 
     def test_validator_failure(self):
         TrainingData.objects.create(
             field='tests.foobar.foo',
-            data=json.dumps([('spam spam spam', 'spam'),
-                             ('this is not spam', 'valid')])
+            data=json.dumps([
+                ('spam spam spam', SPAM),
+                ('ham ham ham', VALID),
+            ])
         )
         TrainingData.objects.create(
             field='tests.foobar.bar',
-            data=json.dumps([('scam scam scam', 'spam'),
-                             ('this is not scam', 'valid')])
+            data=json.dumps([
+                ('foo foo foo', SPAM),
+                ('bar bar bar', VALID),
+            ])
         )
-        m = Foobar.objects.create(foo='spam spammy spam',
-                                  bar='scam scammy scam')
+        m = Foobar.objects.create(
+            foo='spam spam spam',
+            bar='foo foo foo',
+        )
         with self.assertRaises(ValidationError):
             m.clean_fields()
-        m.foo = 'this is totally legit'
+        m.foo = 'ham ham ham'
         with self.assertRaises(ValidationError):
             m.clean_fields()
-        m.bar = 'this is totally legit'
+        m.bar = 'bar bar bar'
         try:
             m.clean_fields()
         except Exception:
-            self.fail()
+            pytest.fail('Fields should have been clean')

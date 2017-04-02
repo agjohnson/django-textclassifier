@@ -1,82 +1,82 @@
-"""Classifier for validation
+"""Text classification using Naive Bayes classifier
 
-These classifier classes extend :py:cls:`NaiveBayesClassifier`, providing
-alternative storage mechanisms for the training data.
+This classifier relies on :py:mod:`sklearn` for feature extraction and
+classification.
 """
 
 import json
+import logging
 
 from django.conf import settings
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.naive_bayes import MultinomialNB
 
-from textblob.classifiers import NaiveBayesClassifier
+from .constants import VALID, SPAM
+from .models import TrainingData
 
-from textclassifier.models import TrainingData
-
-
-class ClassifierStorage(object):
-
-    classifier_class = NaiveBayesClassifier
-
-    def load(self):
-        pass
-
-    def save(self):
-        pass
+log = logging.getLogger(__name__)
 
 
-class FileStorage(ClassifierStorage):
-    """Classifier that uses file storage for a single source"""
+class NaiveBayesClassifier(object):
+    """Naive Bayesian classifier with per-field database storage
 
-    def __init__(self, filename=None):
-        if filename is None:
-            filename = getattr(settings, 'TEXTCLASSIFIER_DATA_FILE')
-        self.filename = filename
-
-    def load(self):
-        try:
-            handle = open(self.filename, 'r')
-            data = json.load(handle)
-        except IOError:
-            raise IOError('The classification file cannot be opened for reading')
-        except ValueError:
-            raise ValueError('The classification file is not valid JSON')
-        self.classifier = self.classifier_class(data)
-        return self.classifier
-
-    def save(self):
-        try:
-            handle = open(self.filename, 'w+')
-            data = [{'text': text, 'label': label}
-                    for (text, label) in self.classifier.train_set]
-            json.dump(data, handle)
-        except IOError:
-            raise IOError('The classification file cannot be opened for writing')
-
-
-class DatabaseStorage(ClassifierStorage):
-    """Classifier that uses database modeling to store classification per-field"""
+    This classifier uses a table for storing training data on each field.
+    """
 
     def __init__(self, field_name):
         self.field_name = field_name
+        self.training_data = []
 
     def load(self):
         try:
             data_obj = TrainingData.objects.get(field=self.field_name)
-            data = json.loads(data_obj.data)
+            self.training_data = json.loads(data_obj.data)
         except (TrainingData.DoesNotExist, TypeError):
-            data = {}
+            self.training_data = []
         except ValueError:
             raise ValueError('The classification data for "%s" is not valid JSON',
                              self.field_name)
-        self.classifier = self.classifier_class(data)
-        return self.classifier
 
     def save(self):
-        data = json.dumps([{'text': text, 'label': label}
-                           for (text, label) in self.classifier.train_set])
+        data = json.dumps(self.training_data)
+        stored_data, _ = TrainingData.get_or_create(field=self.field_name)
+        stored_data.data = data
+        stored_data.save()
+
+    def classify(self, value, accuracy_threshold=0.95):
+        self.load()
+        vectorizer = CountVectorizer(min_df=1)
         try:
-            (TrainingData.objects
-             .filter(field=self.field_name)
-             .update(data=data))
-        except TrainingData.DoesNotExist:
-            TrainingData.objects.create(field=self.field_name, data=data)
+            sampled = vectorizer.fit_transform(
+                [text for (text, _) in self.training_data]
+            )
+        except (ValueError, TypeError):
+            # Training data was not complete or is invalid, return empty result
+            return ClassifierResult()
+        classifier = MultinomialNB()
+        classifier.fit(
+            sampled,
+            [label for (_, label) in self.training_data]
+        )
+        class_values = classifier.predict_proba(
+            vectorizer.transform([value])
+        ).tolist()[0]
+        prob = ClassifierResult(
+            zip(classifier.classes_.tolist(), class_values),
+            accuracy_threshold=accuracy_threshold,
+        )
+
+        if prob.is_spam(accuracy_threshold):
+            log.debug('Classification failed: %s', prob)
+        return prob
+
+
+class ClassifierResult(dict):
+
+    def is_spam(self, accuracy_threshold=0.95):
+        return self.get(SPAM, 0) >= accuracy_threshold
+
+    def is_valid(self, accuracy_threshold=0.95):
+        return not self.is_spam(accuracy_threshold)
