@@ -29,7 +29,11 @@ adding the validator to an existing field:
 
     class MyModel(models.Model):
         description = models.TextField(validators=[
-            TextClassificationValidator(field_name='app.mymodel.description')
+            TextClassificationValidator(
+                app_label='app',
+                model='mymodel',
+                field_name='description'
+            )
         ])
 
 Or you can use the included ``TextField`` wrapper:
@@ -41,3 +45,11 @@ Or you can use the included ``TextField`` wrapper:
 
     class MyModel(models.Model):
         description = TextClassificationField()
+
+There are also admin action helpers that you can add to your admin model:
+
+.. code:: python
+
+    @admin.register(MyModel)
+    class MyModelAdmin(admin.ModelAdmin):
+        actions = [classify_as_valid, classify_as_spam, classify_as_spam_and_delete]
