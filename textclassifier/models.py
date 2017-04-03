@@ -21,4 +21,5 @@ class TrainingData(models.Model):
     update_date = models.DateTimeField(_('Last modification date'), auto_now=True)
 
     def __unicode__(self):
-        return 'For {0}.{1}.{2}'.format(self.app_label, self.model, self.field_name)
+        return ('Training data for field {0}.{1}.{2}'
+                .format(self.app_label, self.model, self.field_name))
