@@ -22,37 +22,63 @@ class TestValidators(TestCase):
             ('ham ham ham', VALID)
         ]
         self.training_data = TrainingData.objects.create(
-            field='foobar',
+            app_label='foo',
+            model='bar',
+            field_name='foobar',
             data=json.dumps(self.data)
         )
 
     def test_validator_pass(self):
-        validate = TextClassificationValidator(field_name='foobar')
+        validate = TextClassificationValidator(
+            app_label='foo',
+            model='bar',
+            field_name='foobar'
+        )
         self.assertTrue(validate('ham ham ham'))
 
     def test_validator_invalid(self):
-        validate = TextClassificationValidator(field_name='foobar')
+        validate = TextClassificationValidator(
+            app_label='foo',
+            model='bar',
+            field_name='foobar'
+        )
         with self.assertRaises(ValidationError):
             validate('spam spam spam')
 
     def test_validator_invalid_different_exception(self):
-        validate = TextClassificationValidator(field_name='foobar',
-                                       raises=ValueError)
+        validate = TextClassificationValidator(
+            app_label='foo',
+            model='bar',
+            field_name='foobar',
+            raises=ValueError
+        )
         with self.assertRaises(ValueError):
             validate('spam spam spam')
 
     def test_invalid_json_throws_value_error(self):
         TrainingData.objects.create(
-            field='invalid',
+            app_label='foo',
+            model='bar',
+            field_name='invalid',
             data='null',
         )
-        validate = TextClassificationValidator(field_name='invalid')
+        validate = TextClassificationValidator(
+            app_label='foo',
+            model='bar',
+            field_name='invalid'
+        )
         self.assertTrue(validate('spam spam spam'))
 
     def test_empty_json(self):
         TrainingData.objects.create(
-            field='empty',
+            app_label='foo',
+            model='bar',
+            field_name='empty',
             data=None,
         )
-        validate = TextClassificationValidator(field_name='empty')
+        validate = TextClassificationValidator(
+            app_label='foo',
+            model='bar',
+            field_name='empty'
+        )
         self.assertTrue(validate('spam spam spam'))

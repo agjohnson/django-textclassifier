@@ -23,7 +23,9 @@ class TestFields(TestCase):
 
     def test_validator_pass_empty_data(self):
         TrainingData.objects.create(
-            field='tests.foobar.foo',
+            app_label='tests',
+            model='foobar',
+            field_name='foo',
             data=None
         )
         m = Foobar.objects.create(foo='foo', bar='bar')
@@ -34,14 +36,18 @@ class TestFields(TestCase):
 
     def test_validator_failure(self):
         TrainingData.objects.create(
-            field='tests.foobar.foo',
+            app_label='tests',
+            model='foobar',
+            field_name='foo',
             data=json.dumps([
                 ('spam spam spam', SPAM),
                 ('ham ham ham', VALID),
             ])
         )
         TrainingData.objects.create(
-            field='tests.foobar.bar',
+            app_label='tests',
+            model='foobar',
+            field_name='bar',
             data=json.dumps([
                 ('foo foo foo', SPAM),
                 ('bar bar bar', VALID),

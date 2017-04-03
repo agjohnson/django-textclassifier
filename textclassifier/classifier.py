@@ -22,13 +22,19 @@ class NaiveBayesClassifier(object):
     This classifier uses a table for storing training data on each field.
     """
 
-    def __init__(self, field_name):
+    def __init__(self, app_label, model, field_name):
+        self.app_label = app_label
+        self.model = model
         self.field_name = field_name
         self.training_data = []
 
     def load(self):
         try:
-            data_obj = TrainingData.objects.get(field=self.field_name)
+            data_obj = TrainingData.objects.get(
+                app_label=self.app_label,
+                model=self.model,
+                field_name=self.field_name
+            )
             self.training_data = json.loads(data_obj.data)
         except (TrainingData.DoesNotExist, TypeError):
             self.training_data = []
@@ -38,8 +44,12 @@ class NaiveBayesClassifier(object):
 
     def save(self):
         data = json.dumps(self.training_data)
-        stored_data, _ = TrainingData.objects.get_or_create(field=self.field_name)
-        stored_data.data = json.dumps(data)
+        stored_data, _ = (TrainingData.objects.get_or_create(
+            app_label=self.app_label,
+            model=self.model,
+            field_name=self.field_name,
+        ))
+        stored_data.data = data
         stored_data.save()
 
     def update(self, value, classification=SPAM):

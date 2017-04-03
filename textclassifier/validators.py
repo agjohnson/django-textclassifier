@@ -33,14 +33,19 @@ class TextClassificationValidator(object):
     message = _('Invalid content')
     code = 'invalid'
 
-    def __init__(self, raises=None, message=None, code=None, field_name=None):
+    def __init__(self, raises=None, message=None, code=None, app_label=None,
+                 model=None, field_name=None):
         if raises is not None:
             self.exception_class = raises
         if message is not None:
             self.message = message
         if code is not None:
             self.code = code
-        self.classifier = NaiveBayesClassifier(field_name=field_name)
+        self.classifier = NaiveBayesClassifier(
+            app_label=app_label,
+            model=model,
+            field_name=field_name,
+        )
 
     def __call__(self, value):
         self.classifier.load()

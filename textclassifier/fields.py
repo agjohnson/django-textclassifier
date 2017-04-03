@@ -16,8 +16,9 @@ class TextClassificationField(TextField):
     def validators(self):
         # pylint: disable=protected-access, unnecessary-lambda
         validator_list = list(self._validators)
-        field_name = '.'.join([self.model._meta.app_label,
-                               self.model._meta.model_name,
-                               self.name])
-        validator_list.append(TextClassificationValidator(field_name=field_name))
+        validator_list.append(TextClassificationValidator(
+            app_label=self.model._meta.app_label,
+            model=self.model._meta.model_name,
+            field_name=self.name,
+        ))
         return validator_list
