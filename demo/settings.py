@@ -3,7 +3,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-SECRET_KEY = 'x(t!v$nsxuut&+ys21f+u-r9o=f@)+_=la7^4f2fb&6#(#3j+&'
+SECRET_KEY = 'x(t!v$nsxuut&+ys21f+u-r9o=f@)+_=la7^4f2fb&6#(#3j+&'  # noqa
 
 DEBUG = True
 
