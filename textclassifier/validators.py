@@ -62,7 +62,9 @@ class TextClassificationValidator(object):
         return (
             isinstance(other, TextClassificationValidator) and
             other.classifier == self.classifier and
-            other.raises == self.raises
+            other.exception_class == self.exception_class and
+            other.code == self.code and
+            other.message == self.message
         )
 
     def __ne__(self, other):
