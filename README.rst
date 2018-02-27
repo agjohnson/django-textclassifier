@@ -50,6 +50,8 @@ There are also admin action helpers that you can add to your admin model:
 
 .. code:: python
 
+    from textclassifier.admin import classify_as_valid, classify_as_spam, classify_as_spam_and_delete
+
     @admin.register(MyModel)
     class MyModelAdmin(admin.ModelAdmin):
         actions = [classify_as_valid, classify_as_spam, classify_as_spam_and_delete]
