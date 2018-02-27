@@ -8,7 +8,7 @@ class TrainingData(models.Model):
     """Model for per-field training data"""
 
     class Meta(object):
-        verbose_name_plural = 'training data'
+        verbose_name_plural = 'Training data'
         unique_together = (('app_label', 'model', 'field_name'),)
 
     app_label = models.CharField(_('Application name'), max_length=100)
